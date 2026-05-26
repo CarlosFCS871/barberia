@@ -1,6 +1,6 @@
 FROM php:8.2-fpm
 
-# Instalar dependencias del sistema y Node.js para compilar Vite/Tailwind
+# Instalar dependencias del sistema y Node.js para Vite
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -10,30 +10,30 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     nginx \
-    && curl -fsSL https://nodesource.com | bash - \
-    && apt-get install -y explosives nodejs
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
-# Limpiar caché
+# Limpiar caché de paquetes
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones de PHP
+# Instalar extensiones de PHP requeridas por Laravel
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Conseguir Composer
+# Descargar la última versión limpia de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configurar directorio de trabajo
+# Configurar el directorio de trabajo dentro del contenedor
 WORKDIR /var/www
 COPY . /var/www
 
-# Instalar dependencias de PHP y compilar JavaScript/CSS de producción
+# Instalar paquetes de PHP y compilar JavaScript/CSS para producción
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
-# Permisos para Laravel
+# Asignar permisos correctos a las carpetas internas de Laravel
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Configurar Nginx para Laravel
+# Crear archivo de configuración para enlazar Nginx con PHP
 RUN echo 'server { \n\
     listen 10000; \n\
     root /var/www/public; \n\
@@ -50,4 +50,5 @@ RUN echo 'server { \n\
 
 EXPOSE 10000
 
+# Arrancar el procesador PHP y el servidor web Nginx en paralelo
 CMD php-fpm -D && nginx -g 'daemon off;'
