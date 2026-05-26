@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
 # Limpiar la caché de paquetes descargados
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones de PHP que Laravel exige para funcionar
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# Instalar extensiones de PHP requeridas por Laravel (Soporte completo SQLite)
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
 
 # Descargar e integrar Composer limpio de forma oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -38,5 +38,10 @@ COPY nginx.conf /etc/nginx/sites-available/default
 
 EXPOSE 10000
 
-# Lanzar los procesos del motor PHP y el servidor web Nginx en paralelo
-CMD php-fpm -D && nginx -g 'daemon off;'
+# COMANDO SEGURO: Crea la base de datos, otorga permisos absolutos al usuario de Nginx (www-data) e inicia
+CMD touch /var/www/storage/database.sqlite && \
+    chmod -R 775 /var/www/storage && \
+    chown -R www-data:www-data /var/www/storage && \
+    php artisan migrate --force && \
+    php-fpm -D && \
+    nginx -g 'daemon off;'
