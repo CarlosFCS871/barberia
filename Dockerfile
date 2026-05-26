@@ -24,7 +24,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www
 COPY . /var/www
 
-# Instalar los paquetes de Laravel ignorando bloqueos estrictos de la plataforma
+# Eliminar cualquier residuo local antes de instalar
+RUN rm -rf vendor composer.lock
+
+# Instalar los paquetes de Laravel de forma 100% limpia y fresca
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 # Asignar los permisos necesarios para el procesamiento de archivos de Laravel
