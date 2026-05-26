@@ -1,4 +1,12 @@
 <?php
+// Forzar la creación de la base de datos SQLite si no existe en producción
+$sqlitePath = __DIR__ . '/../storage/database.sqlite';
+if (!file_exists($sqlitePath)) {
+    touch($sqlitePath);
+    chmod($sqlitePath, 0775);
+}
+
+
 
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
