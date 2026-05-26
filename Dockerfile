@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+Set-Content -Path "Dockerfile" -Value 'FROM php:8.3-fpm
 
 # Instalar dependencias del sistema y Node.js para Vite
 RUN apt-get update && apt-get install -y \
@@ -34,21 +34,21 @@ RUN npm install && npm run build
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # Crear archivo de configuración para enlazar Nginx con PHP
-RUN echo 'server { \n\
+RUN echo "server { \n\
     listen 10000; \n\
     root /var/www/public; \n\
     index index.php index.html; \n\
     location / { \n\
-        try_files $uri $uri/ /index.php?$query_string; \n\
+        try_files \$uri \$uri/ /index.php?\$query_string; \n\
     } \n\
     location ~ \.php$ { \n\
         include fastcgi_params; \n\
         fastcgi_pass 127.0.0.1:9000; \n\
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \n\
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name; \n\
     } \n\
-}' > /etc/nginx/sites-available/default
+}" > /etc/nginx/sites-available/default
 
 EXPOSE 10000
 
 # Arrancar el procesador PHP y el servidor web Nginx en paralelo
-CMD php-fpm -D && nginx -g 'daemon off;'
+CMD php-fpm -D && nginx -g "daemon off;"'
