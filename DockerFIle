@@ -1,9 +1,7 @@
-FROM php:8.3-fpm
+FROM php:8.2-fpm
 
-
-# Instalar dependencias del sistema y herramientas necesarias
+# Instalar dependencias del sistema y Node.js para compilar Vite/Tailwind
 RUN apt-get update && apt-get install -y \
-    nginx \
     git \
     curl \
     libpng-dev \
@@ -11,35 +9,45 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    libpq-dev \
-    libzip-dev
+    nginx \
+    && curl -fsSL https://nodesource.com | bash - \
+    && apt-get install -y explosives nodejs
 
-# Limpiar caché de apt
+# Limpiar caché
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones de PHP requeridas por Laravel
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+# Instalar extensiones de PHP
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Instalar Composer
+# Conseguir Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Instalar Node.js y NPM (necesario para Vite / Laravel Mix)
-RUN curl -fsSL https://nodesource.com | bash - \
-    && apt-get install -y nodejs
-
 # Configurar directorio de trabajo
-WORKDIR /var/www/html
+WORKDIR /var/www
+COPY . /var/www
 
-# Copiar el código de la aplicación
-COPY . .
+# Instalar dependencias de PHP y compilar JavaScript/CSS de producción
+RUN composer install --no-dev --optimize-autoloader
+RUN npm install && npm run build
 
-# Instalar dependencias de PHP y generar el autoload
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+# Permisos para Laravel
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Ajustar permisos para el almacenamiento y caché de Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Configurar Nginx para Laravel
+RUN echo 'server { \n\
+    listen 10000; \n\
+    root /var/www/public; \n\
+    index index.php index.html; \n\
+    location / { \n\
+        try_files $uri $uri/ /index.php?$query_string; \n\
+    } \n\
+    location ~ \.php$ { \n\
+        include fastcgi_params; \n\
+        fastcgi_pass 127.0.0.1:9000; \n\
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \n\
+    } \n\
+}' > /etc/nginx/sites-available/default
 
-# Exponer el puerto para PHP-FPM
-EXPOSE 9000
+EXPOSE 10000
 
-CMD ["php-fpm"]
+CMD php-fpm -D && nginx -g 'daemon off;'
