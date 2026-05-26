@@ -274,4 +274,19 @@ Route::middleware('auth')->group(function () {
 
 
 
+use Illuminate\Support\Facades\Artisan;
+
+Route::get('/migrar-base-de-datos', function () {
+    try {
+        // Ejecuta las migraciones forzadas en producción
+        Artisan::call('migrate', ['--force' => true]);
+        return '¡Base de datos migrada con éxito! Las tablas se crearon correctamente.';
+    } catch (\Exception $e) {
+        return 'Error al migrar: ' . $e->getMessage();
+    }
+});
+
+
+
+
 require __DIR__ . '/auth.php';
