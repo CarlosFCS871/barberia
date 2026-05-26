@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
-    libonig-dev \
     libxml2-dev \
     zip \
     unzip \
@@ -14,8 +13,8 @@ RUN apt-get update && apt-get install -y \
 # Limpiar la caché de paquetes descargados
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar extensiones de PHP requeridas por Laravel (Soporte completo SQLite)
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
+# Instalar extensiones de PHP (Simplificado y corregido para evitar fallos)
+RUN docker-php-ext-install pdo_mysql bcmath gd
 
 # Descargar e integrar Composer limpio de forma oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
