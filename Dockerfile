@@ -38,10 +38,5 @@ COPY nginx.conf /etc/nginx/sites-available/default
 
 EXPOSE 10000
 
-# COMANDO SEGURO: Crea la base de datos, otorga permisos absolutos al usuario de Nginx (www-data) e inicia
-CMD touch /var/www/storage/database.sqlite && \
-    chmod -R 775 /var/www/storage && \
-    chown -R www-data:www-data /var/www/storage && \
-    php artisan migrate --force && \
-    php-fpm -D && \
-    nginx -g 'daemon off;'
+# Arrancar los servicios principales en paralelo de forma limpia
+CMD php-fpm -D && nginx -g 'daemon off;'
