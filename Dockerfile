@@ -1,6 +1,6 @@
 FROM php:8.3-fpm
 
-# Instalar dependencias esenciales del sistema, Nginx y Node.js para Vite
+# Instalar dependencias esenciales del sistema y el servidor web Nginx
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -8,9 +8,7 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    nginx \
-    && curl -fsSL https://nodesource.com | bash - \
-    && apt-get install -y nodejs
+    nginx
 
 # Limpiar la caché de paquetes descargados
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -26,13 +24,10 @@ WORKDIR /var/www
 COPY . /var/www
 
 # Eliminar cualquier residuo local antes de instalar
-RUN rm -rf vendor composer.lock node_modules
+RUN rm -rf vendor composer.lock
 
-# Instalar paquetes de PHP e ignorar restricciones de plataforma
+# Instalar los paquetes de Laravel de forma 100% limpia y fresca
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
-
-# Instalar paquetes de Node y compilar la interfaz visual de Vite
-RUN npm install && npm run build
 
 # Asignar los permisos necesarios para el procesamiento de archivos de Laravel
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
